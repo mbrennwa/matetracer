@@ -14,7 +14,7 @@ function fig = met_plot_curves (file,Pmax,annot,fig_save)
 % fig: figure handle
 %
 % EXAMPLE:
-% met_plot_curves ("~/Downloads/measurment_samples/300B.csv",40,"300B\netracer example data","300b.pdf");
+% met_plot_curves ("path/to/300B.csv",40,"300B","300b.pdf");
 %
 % DISCLAIMER:
 % This file is part of MATETRACER.
@@ -38,7 +38,7 @@ if ~exist('annot','var')
 end
 
 % read data file:
-traces = me_read_tube_data (file);
+traces = met_read_tube_data (file);
 
 lstyle = '-';
 lcolor = [1 1 1];
