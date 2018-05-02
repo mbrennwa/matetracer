@@ -46,15 +46,19 @@ traces = met_read_tube_data (file);
 
 lstyle = '-';
 lcolor = [1 1 1];
-lwidth = 1.5;
+lwidth = 1.3;
 fsize  = 10;
+fname  = "Helvetica";
 
 xmax = ymax = 0;
 
-set (0, "defaultaxesfontname", "Helvetica")
-set (0, "defaultaxesfontsize", fsize)
-set (0, "defaulttextfontname", "Helvetica")
-set (0, "defaulttextfontsize", fsize) 
+
+% get figure handle:
+fig = gcf();
+set (fig, "defaultaxesfontname", fname)
+set (fig, "defaultaxesfontsize", fsize)
+set (fig, "defaulttextfontname", fname)
+set (fig, "defaulttextfontsize", fsize)
 
 Ug_labels = repmat(NaN,length(traces),2); % text handle / trace slope pair (needed for moving labels later)
 for i = 1:length(traces)
@@ -179,9 +183,6 @@ grid on;
 
 % make a fat frame:
 h = rectangle ( 'Position',[0 0 xmax ymax] , 'EdgeColor','k' ,'linewidth',lwidth );
-
-% get figure handle:
-fig = gcf();
 
 % print to file:
 if ~isempty(fig_save)
