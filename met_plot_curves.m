@@ -1,13 +1,13 @@
 function fig = met_plot_curves (file,Pmax,annot,fig_save)
 
-% function fig = met_plot_curves (file,Pmax,doSave)
+% function fig = met_plot_curves (file,Pmax,annot,fig_save)
 %
 % Plot data from etracer CSV data files (vacuum tube anode voltage vs anode current as a function of grid voltage).
 %
 % INPUT:
-% file: file path / name of etracer CSV data file
-% Pmax: max anode dissipation of tube (Watt).
-% annotat (optional): annotation text (top right on figure)
+% file: file path / name of data file (see also met_read_tube_data.m)
+% Pmax (optional): max anode dissipation of tube (Watt). Default: Pmax = Inf.
+% annot (optional): annotation text (top right on figure)
 % fig_save (optional): name of file for saving the graphics. The file format is determined from the file suffix (*.eps, *.pdf, or *png)
 %
 % OUTPUT:
@@ -15,6 +15,7 @@ function fig = met_plot_curves (file,Pmax,annot,fig_save)
 %
 % EXAMPLE:
 % met_plot_curves ("path/to/300B.csv",40,"300B","300b.pdf");
+% met_plot_curves ("path/to/12AT7.utd",2.5);
 %
 % DISCLAIMER:
 % This file is part of MATETRACER.
@@ -30,6 +31,9 @@ function fig = met_plot_curves (file,Pmax,annot,fig_save)
 % Further information: http://www.audioroot.net/MATAA
 
 % check input:
+if ~exist('Pmax','var')
+	Pmax = Inf;
+end
 if ~exist('fig_save','var')
 	fig_save = '';
 end
@@ -46,8 +50,6 @@ lwidth = 1.5;
 fsize  = 10;
 
 xmax = ymax = 0;
-fig = figure();
-clf;
 
 set (0, "defaultaxesfontname", "Helvetica")
 set (0, "defaultaxesfontsize", fsize)
@@ -57,60 +59,66 @@ set (0, "defaulttextfontsize", fsize)
 Ug_labels = repmat(NaN,length(traces),2); % text handle / trace slope pair (needed for moving labels later)
 for i = 1:length(traces)
 
-	% make sure resolution gives smooth curve (use spline interpolation)
-	if length(traces(i).Ua) < 100
-		xx = linspace ( min(traces(i).Ua),max(traces(i).Ua),100 );
-		traces(i).Ia = interp1 ( traces(i).Ua,traces(i).Ia,xx,'spline' );
-		traces(i).Ua = xx;
+	if length(traces(i).Ua) > 1
+
+		% make sure resolution gives smooth curve (use spline interpolation)
+		if length(traces(i).Ua) < 100
+			xx = linspace ( min(traces(i).Ua),max(traces(i).Ua),100 );
+			traces(i).Ia = interp1 ( traces(i).Ua,traces(i).Ia,xx,'spline' );
+			traces(i).Ua = xx;
+		end
+
+		% throw away data that is far beyond Pmax:
+		l = find (traces(i).Ia/1000.*traces(i).Ua > 1.3 * Pmax);
+		traces(i).Ia(l) = NaN; traces(i).Ua(l) = NaN;
+		
+		% remove NaN data:
+		traces(i).Ua = traces(i).Ua(~isnan(traces(i).Ua));
+		traces(i).Ia = traces(i).Ia(~isnan(traces(i).Ia));
+
+		% add Zero:
+		traces(i).Ua = [0,traces(i).Ua];
+		traces(i).Ia = [0,traces(i).Ia];
+
+		% plot trace:
+		plot ( traces(i).Ua,traces(i).Ia , 'linestyle',lstyle , 'color',0*lcolor , 'linewidth',lwidth );
+		hold on;
+
+		% add grid voltage label (move label position later, when plot scaling is done):
+		Ug_labels(i,1) = text (traces(i).Ua(end),traces(i).Ia(end),sprintf('%i V',traces(i).Ug) , 'verticalalignment','middle', 'horizontalalignment','center' , 'fontsize',0.8*fsize);
+
+		s = diff(traces(i).Ia)./diff(traces(i).Ua);
+		Ug_labels(i,2) = s(end);
+
+		% check max. x/y extent of trace:
+		xmax = max([max(traces(i).Ua),xmax]);
+		ymax = max([max(traces(i).Ia),ymax]);
+
 	end
-
-	% throw away data that is far beyond Pmax:
-	l = find (traces(i).Ia/1000.*traces(i).Ua > 1.3 * Pmax);
-	traces(i).Ia(l) = NaN; traces(i).Ua(l) = NaN;
-	
-	% remove NaN data:
-	traces(i).Ua = traces(i).Ua(~isnan(traces(i).Ua));
-	traces(i).Ia = traces(i).Ia(~isnan(traces(i).Ia));
-
-	% add Zero:
-	traces(i).Ua = [0,traces(i).Ua];
-	traces(i).Ia = [0,traces(i).Ia];
-
-	% plot trace:
-	plot ( traces(i).Ua,traces(i).Ia , 'linestyle',lstyle , 'color',0*lcolor , 'linewidth',lwidth );
-	hold on;
-
-	% add grid voltage label (move label position later, when plot scaling is done):
-	Ug_labels(i,1) = text (traces(i).Ua(end),traces(i).Ia(end),sprintf('%i V',traces(i).Ug) , 'verticalalignment','middle', 'horizontalalignment','center' , 'fontsize',0.8*fsize);
-
-	s = diff(traces(i).Ia)./diff(traces(i).Ua); Ug_labels(i,2) = s(end);
-
-	% check max. x/y extent of trace:
-	xmax = max([max(traces(i).Ua),xmax]);
-	ymax = max([max(traces(i).Ia),ymax]);
-
 end
 
 % move Ug labels:
 for i = 1:length(traces)
-	p = get (Ug_labels(i,1),'position');
-	ext = get (Ug_labels(i,1),'extent');
-	%rectangle('position',ext);
-	s0 = ext(4)/ext(3);
-	if Ug_labels(i,2) > s0 % move label above the end of the line, an a bit to the right
-		sy = ext(4) / 2;
-		sx = sy / Ug_labels(i,2);
-	else % move label to the right of the end of the line, and a bit up
-		sx = ext(3) / 2;
-		sy = sx * Ug_labels(i,2);
+	if length(traces(i).Ua) > 1
+		p = get (Ug_labels(i,1),'position');
+		ext = get (Ug_labels(i,1),'extent');
+		%rectangle('position',ext);
+		s0 = ext(4)/ext(3);
+		if Ug_labels(i,2) > s0 % move label above the end of the line, an a bit to the right
+			sy = ext(4) / 2;
+			sx = sy / Ug_labels(i,2);
+		else % move label to the right of the end of the line, and a bit up
+			sx = ext(3) / 2;
+			sy = sx * Ug_labels(i,2);
+		end
+		p = [ p(1)+1.5*sx , p(2)+1.5*sy , p(3) ];
+		set (Ug_labels(i,1),'position',p)
+
+		% check max. x/y extent of labels:
+		xmax = max([p(1)+ext(3)/2,xmax]);
+		ymax = max([p(2)+ext(4)/2,ymax]);
+
 	end
-	p = [ p(1)+1.5*sx , p(2)+1.5*sy , p(3) ];
-	set (Ug_labels(i,1),'position',p)
-
-	% check max. x/y extent of labels:
-	xmax = max([p(1)+ext(3)/2,xmax]);
-	ymax = max([p(2)+ext(4)/2,ymax]);
-
 end
 
 % determine grid spacing:
@@ -171,6 +179,9 @@ grid on;
 
 % make a fat frame:
 h = rectangle ( 'Position',[0 0 xmax ymax] , 'EdgeColor','k' ,'linewidth',lwidth );
+
+% get figure handle:
+fig = gcf();
 
 % print to file:
 if ~isempty(fig_save)
