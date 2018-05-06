@@ -1,11 +1,11 @@
-function fig = met_plot_curves (file,Pmax,annot,fig_save)
+function fig = met_plot_curves (traces,Pmax,annot,fig_save)
 
-% function fig = met_plot_curves (file,Pmax,annot,fig_save)
+% function fig = met_plot_curves (traces,Pmax,annot,fig_save)
 %
 % Plot data from etracer CSV data files (vacuum tube anode voltage vs anode current as a function of grid voltage).
 %
 % INPUT:
-% file: file path / name of data file (see also met_read_tube_data.m)
+% traces: tube tracer data (struct array, see met_read_tube_data.m). Only single tube units are supported (no cell array with multiple units).
 % Pmax (optional): max anode dissipation of tube (Watt). Default: Pmax = Inf.
 % annot (optional): annotation text (top right on figure)
 % fig_save (optional): name of file for saving the graphics. The file format is determined from the file suffix (*.eps, *.pdf, or *png)
@@ -40,9 +40,6 @@ end
 if ~exist('annot','var')
 	annot = '';
 end
-
-% read data file:
-traces = met_read_tube_data (file);
 
 lstyle = '-';
 lcolor = [1 1 1];
