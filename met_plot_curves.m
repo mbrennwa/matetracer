@@ -148,7 +148,7 @@ hold off
 
 % add axes labels:
 xlabel ( 'ANODE VOLTAGE (V)' , 'fontsize',fsize )
-ylabel ( 'ANODE CURENT (mA)' , 'fontsize',fsize )
+ylabel ( 'ANODE CURRENT (mA)' , 'fontsize',fsize )
 
 % format plot area (axes limits, grid):
 axis ([0 xmax 0 ymax]);
